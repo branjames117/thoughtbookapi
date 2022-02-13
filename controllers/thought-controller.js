@@ -124,7 +124,7 @@ const thoughtController = {
         { _id: params.thoughtId },
         { $push: { reactions: body } },
         { new: true, runValidators: true }
-      );
+      ).select('-__v');
 
       if (!updatedThought) {
         throw new Error(
@@ -144,7 +144,7 @@ const thoughtController = {
         { _id: params.thoughtId },
         { $pull: { reactions: { _id: params.reactionId } } },
         { new: true }
-      );
+      ).select('-__v');
 
       if (!updatedThought) {
         throw new Error(

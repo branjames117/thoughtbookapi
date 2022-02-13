@@ -10,7 +10,7 @@ const userController = {
         .select('-__v')
         .sort({ _id: -1 });
 
-      if (!users) {
+      if (users?.length === 0) {
         throw new Error('No users found in the database.');
       }
 

@@ -1,3 +1,4 @@
+const { Types } = require('mongoose');
 const { User } = require('../models');
 
 const userController = {
@@ -10,7 +11,7 @@ const userController = {
         .sort({ _id: -1 });
 
       if (!users) {
-        return res.status(400).json({ message: 'No users found in database.' });
+        throw new Error('No users found in the database.');
       }
 
       return res.json(users);
@@ -24,9 +25,7 @@ const userController = {
       const createdUser = await User.create(body);
 
       if (!createdUser) {
-        return res
-          .status(400)
-          .json({ message: 'Something went wrong! User not created.' });
+        throw new Error('Creation failed! Something went wrong.');
       }
 
       return res.json(createdUser);
@@ -43,7 +42,7 @@ const userController = {
         .select('-__v');
 
       if (!user) {
-        return res.status(400).json({ message: 'No user found with this ID.' });
+        throw new Error('No user found with this ID.');
       }
 
       return res.json(user);
@@ -64,9 +63,7 @@ const userController = {
       );
 
       if (!updatedUser) {
-        return res
-          .status(400)
-          .json({ message: 'Update failed! No user found with this ID.' });
+        throw new Error('Update failed! No user found with this ID.');
       }
 
       return res.json(updatedUser);
@@ -80,9 +77,7 @@ const userController = {
       const deletedUser = await User.findOneAndDelete({ _id: params.userId });
 
       if (!deletedUser) {
-        return res
-          .status(400)
-          .json({ message: 'Delete failed! No user found with this ID.' });
+        throw new Error('Delete failed! No user found with this ID.');
       }
 
       return res.json(deletedUser);
@@ -93,26 +88,34 @@ const userController = {
 
   async addFriend({ params, body }, res) {
     try {
+      // check that friend exists
       const friend = await User.findOne({ _id: params.friendId });
 
       if (!friend) {
-        return res
-          .status(400)
-          .json({ message: 'Add friend failed! No user found with this ID.' });
+        throw new Error('Add friend failed! No user found with this ID.');
+      }
+
+      // check if friend is already in user's friends list
+      const checkedUser = await User.findOne({
+        _id: params.userId,
+        friends: {
+          _id: Types.ObjectId(params.friendId),
+        },
+      });
+
+      // if so, error out
+      if (checkedUser) {
+        throw new Error('Add friend failed! User already in friends list.');
       }
 
       const updatedUser = await User.findOneAndUpdate(
         { _id: params.userId },
         { $push: { friends: friend._id } },
         { new: true }
-      )
-        .populate({ path: 'friends', select: '-__v' })
-        .select('-__v');
+      ).select('-__v');
 
       if (!updatedUser) {
-        return res
-          .status(400)
-          .json({ message: 'Add friend failed! No user found with this ID.' });
+        throw new Error('Add friend failed! No user found with this ID.');
       }
 
       return res.json(updatedUser);
@@ -122,20 +125,15 @@ const userController = {
   },
 
   async deleteFriend({ params }, res) {
-    console.log(params.friendId);
     try {
       const updatedUser = await User.findOneAndUpdate(
         { _id: params.userId },
         { $pull: { friends: params.friendId } },
         { new: true }
-      )
-        .populate({ path: 'friends', select: '-__v' })
-        .select('-__v');
+      ).select('-__v');
 
       if (!updatedUser) {
-        return res.status(400).json({
-          message: 'Delete friend failed! No user found with this ID.',
-        });
+        throw new Error('Delete friend failed! No user found with this ID.');
       }
 
       return res.json(updatedUser);

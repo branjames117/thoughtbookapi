@@ -25,7 +25,7 @@ const userController = {
       const createdUser = await User.create(body);
 
       if (!createdUser) {
-        throw new Error('Creation failed! Something went wrong.');
+        throw new Error('User creation failed! Something went wrong.');
       }
 
       return res.json(createdUser);
@@ -42,7 +42,7 @@ const userController = {
         .select('-__v');
 
       if (!user) {
-        throw new Error('No user found with this ID.');
+        throw new Error(`User not found (ID: ${params.userId}).`);
       }
 
       return res.json(user);
@@ -63,7 +63,9 @@ const userController = {
       );
 
       if (!updatedUser) {
-        throw new Error('Update failed! No user found with this ID.');
+        throw new Error(
+          `User update failed! User not found (ID: ${params.userId}).`
+        );
       }
 
       return res.json(updatedUser);
@@ -77,10 +79,14 @@ const userController = {
       const deletedUser = await User.findOneAndDelete({ _id: params.userId });
 
       if (!deletedUser) {
-        throw new Error('Delete failed! No user found with this ID.');
+        throw new Error(
+          `User delete failed! User not found (ID: ${params.userId}).`
+        );
       }
 
-      return res.json(deletedUser);
+      return res.json({
+        message: `User (ID: ${params.userId}) and associated thoughts deleted.`,
+      });
     } catch ({ message }) {
       return res.status(500).json({ message });
     }
@@ -92,7 +98,9 @@ const userController = {
       const friend = await User.findOne({ _id: params.friendId });
 
       if (!friend) {
-        throw new Error('Add friend failed! No user found with this ID.');
+        throw new Error(
+          `Add friend failed! Friend not found (ID: ${params.friendId}).`
+        );
       }
 
       // check if friend is already in user's friends list
@@ -105,7 +113,9 @@ const userController = {
 
       // if so, error out
       if (checkedUser) {
-        throw new Error('Add friend failed! User already in friends list.');
+        throw new Error(
+          `Add friend failed! Friend (ID: ${params.friendId}) already in friends list of user (ID: ${params.userId}).`
+        );
       }
 
       const updatedUser = await User.findOneAndUpdate(
@@ -115,7 +125,9 @@ const userController = {
       ).select('-__v');
 
       if (!updatedUser) {
-        throw new Error('Add friend failed! No user found with this ID.');
+        throw new Error(
+          `Add friend failed! User not found (ID: ${params.userId}).`
+        );
       }
 
       return res.json(updatedUser);
@@ -133,10 +145,14 @@ const userController = {
       ).select('-__v');
 
       if (!updatedUser) {
-        throw new Error('Delete friend failed! No user found with this ID.');
+        throw new Error(
+          `Delete friend failed! User not found (ID: ${params.userId}).`
+        );
       }
 
-      return res.json(updatedUser);
+      return res.json({
+        message: `Friend (ID: ${params.friendId}) removed from friends list of user (ID ${params.userId}).`,
+      });
     } catch ({ message }) {
       return res.status(500).json({ message });
     }

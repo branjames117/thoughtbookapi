@@ -1,5 +1,5 @@
 const { Types } = require('mongoose');
-const { User } = require('../models');
+const { User, Thought } = require('../models');
 
 const userController = {
   async getAllUsers(req, res) {
@@ -84,6 +84,23 @@ const userController = {
         );
       }
 
+      // delete user's associated thoughts
+      await Thought.deleteMany({
+        username: deletedUser.username,
+      });
+
+      // delete user from all other user's friends list
+      await User.updateMany(
+        {
+          friends: {
+            _id: Types.ObjectId(params.userId),
+          },
+        },
+        {
+          $pull: { friends: params.userId },
+        }
+      );
+
       return res.json({
         message: `User (ID: ${params.userId}) and associated thoughts deleted.`,
       });
@@ -122,7 +139,9 @@ const userController = {
         { _id: params.userId },
         { $push: { friends: friend._id } },
         { new: true }
-      ).select('-__v');
+      )
+        .populate({ path: 'friends', select: '-__v' })
+        .select('-__v');
 
       if (!updatedUser) {
         throw new Error(
@@ -130,7 +149,9 @@ const userController = {
         );
       }
 
-      return res.json(updatedUser);
+      return res.json({
+        message: `Friend (ID: ${params.friendId}) added to friends list of user (ID ${params.userId}).`,
+      });
     } catch ({ message }) {
       return res.status(500).json({ message });
     }

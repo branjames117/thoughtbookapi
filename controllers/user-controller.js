@@ -109,7 +109,7 @@ const userController = {
     }
   },
 
-  async addFriend({ params, body }, res) {
+  async addFriend({ params }, res) {
     try {
       // check that friend exists
       const friend = await User.findOne({ _id: params.friendId });
